@@ -1,0 +1,16 @@
+domain: puzzle-itc.de
+layout:
+- ansible.sdk.operatorframework.io/v1
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: randomsecret-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: puzzle-itc.de
+  group: util
+  kind: RandomSecret
+  version: v1alpha1
+version: "3"
