@@ -1,2 +1,14 @@
 ---
 # defaults file for RandomSecret
+
+default_chars: "ascii_letters,digits"
+default_length: 16
+default_type: "Opaque"
+annotations: []
+labels: []
+data: {}
+random_keys: []
+string_data: {}
+_data: "{{ data }}"
+_random_keys: "{{ random_keys }}"
+_string_data: "{{ string_data }}"

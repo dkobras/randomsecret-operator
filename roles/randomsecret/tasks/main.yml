@@ -1,2 +1,33 @@
 ---
 # tasks file for RandomSecret
+
+# XXX: It's crucial not to modify string_data directly here, because it's
+# getting set as an extra variable (if it's used in the CR), and this
+# assignment takes precedence over our fact. Instead, we use a copy
+# (_string_data) that we can control ourselves.
+- name: Initialize random_keys with random values
+  set_fact:
+    _string_data: "{{ _string_data|combine({
+                       item.name|default(item):
+                         lookup('password', '/dev/null' +
+                           ' length=' + item.length|default(default_length)|string +
+                           ' chars=' + item.chars|default(default_chars)|string)
+                       }) }}"
+  loop: "{{ _random_keys }}"
+
+- name: Encode plaintext content
+  set_fact:
+    _data: "{{ _data|combine({ item.key: item.value|b64encode }) }}"
+  loop: "{{ _string_data|dict2items }}"
+
+- name: Create secret with random values
+  k8s:
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: '{{ ansible_operator_meta.name }}'
+        namespace: '{{ ansible_operator_meta.namespace }}'
+        annotations: '{{ annotations }}'
+        labels: '{{ labels }}'
+      data: '{{ _data }}'
