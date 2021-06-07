@@ -14,6 +14,14 @@
     current_keys: "{{ dict(current_secret.resources|first)['data'].keys() }}"
   when: current_secret.resources|length > 0
 
+- name: Extract last rotation stamp
+  set_fact:
+    current_last_rotated_at: "{{ _util_puzzle_itc_de_randomsecret.status.lastRotatedAt|default({}) }}"
+
+- name: Set current date stamp
+  set_fact:
+    current_datestamp: '{{ now(fmt="%Y-%m-%d %H:%M:%S") }}'
+
 # XXX: It's crucial not to modify string_data directly here, because it's
 # getting set as an extra variable (if it's used in the CR), and this
 # assignment takes precedence over our fact. Instead, we use a copy
@@ -26,8 +34,18 @@
                            ' length=' + item.length|default(default_length)|string +
                            ' chars=' + item.chars|default(default_chars)|string)
                        }) }}"
+    _last_rotated_at: "{{ _last_rotated_at|combine({
+                            item.name|default(item): current_datestamp
+                       }) }}"
   when: >
-    (item.update_strategy|default(default_update_strategy)|lower == 'rotate')
+    ((item.update_strategy|default(default_update_strategy)|lower == 'rotate')
+      and
+     (item.name|default(item) not in current_last_rotated_at.keys()
+      or
+      (current_datestamp|to_datetime - current_last_rotated_at[item.name|default(item)]|to_datetime).total_seconds()
+       >= item.update_seconds|default(default_update_seconds)
+     )
+    )
     or
     (item.name|default(item) not in current_keys)
   loop: "{{ _random_keys }}"
@@ -48,3 +66,12 @@
         annotations: '{{ annotations }}'
         labels: '{{ labels }}'
       data: '{{ _data }}'
+
+- name: Record state of last key rotation
+  k8s_status:
+    api_version: "{{ _util_puzzle_itc_de_randomsecret.apiVersion }}"
+    kind: "{{ _util_puzzle_itc_de_randomsecret.kind }}"
+    name: '{{ ansible_operator_meta.name }}'
+    namespace: '{{ ansible_operator_meta.namespace }}'
+    status:
+      lastRotatedAt: '{{ _last_rotated_at }}'
