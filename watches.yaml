@@ -5,4 +5,10 @@
   kind: RandomSecret
   role: randomsecret
   reconcilePeriod: 60s
+  snakeCaseParameters: false
+  watchDependentResources: false
+  finalizer:
+    name: util.puzzle-itc.de/randomsecret-finalizer
+    vars:
+      state: teardown
 #+kubebuilder:scaffold:watch
