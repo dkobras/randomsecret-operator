@@ -4,4 +4,5 @@
   group: util.puzzle-itc.de
   kind: RandomSecret
   role: randomsecret
+  reconcilePeriod: 60s
 #+kubebuilder:scaffold:watch
