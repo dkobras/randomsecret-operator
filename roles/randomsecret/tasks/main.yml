@@ -1,6 +1,19 @@
 ---
 # tasks file for RandomSecret
 
+- name: Check current state of secret
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    name: '{{ ansible_operator_meta.name }}'
+    namespace: '{{ ansible_operator_meta.namespace }}'
+  register: current_secret
+
+- name: Extract current secret data
+  set_fact:
+    current_keys: "{{ dict(current_secret.resources|first)['data'].keys() }}"
+  when: current_secret.resources|length > 0
+
 # XXX: It's crucial not to modify string_data directly here, because it's
 # getting set as an extra variable (if it's used in the CR), and this
 # assignment takes precedence over our fact. Instead, we use a copy
@@ -13,6 +26,10 @@
                            ' length=' + item.length|default(default_length)|string +
                            ' chars=' + item.chars|default(default_chars)|string)
                        }) }}"
+  when: >
+    (item.update_strategy|default(default_update_strategy)|lower == 'rotate')
+    or
+    (item.name|default(item) not in current_keys)
   loop: "{{ _random_keys }}"
 
 - name: Encode plaintext content

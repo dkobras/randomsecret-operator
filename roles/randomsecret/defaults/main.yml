@@ -3,10 +3,12 @@
 
 default_chars: "ascii_letters,digits"
 default_length: 16
+default_update_strategy: 'keep'
 default_type: "Opaque"
 annotations: []
 labels: []
 data: {}
+current_keys: []
 random_keys: []
 string_data: {}
 _data: "{{ data }}"
