@@ -1,11 +1,6 @@
 ---
 # defaults file for RandomSecret
 
-default_chars: "ascii_letters,digits"
-default_length: 16
-default_update_seconds: 86400
-default_update_strategy: 'keep'
-default_type: "Opaque"
 annotations: []
 labels: []
 data: {}
@@ -15,5 +10,14 @@ random_keys: []
 string_data: {}
 _data: "{{ data }}"
 _last_rotated_at: {}
-_random_keys: "{{ random_keys }}"
-_string_data: "{{ string_data }}"
+
+# compat setup that works for either setting of snakeCaseParameters
+default_chars: "{{ defaultChars|default('ascii_letters,digits') }}"
+default_length: "{{ defaultLength|default(16) }}"
+default_update_seconds: "{{ defaultUpdateSeconds|default(86400) }}"
+default_update_strategy: "{{ defaultUpdateStrategy|default('keep') }}"
+default_type: "{{ defaultType|default('Opaque') }}"
+setup_jobspec: "{{ setupJobspec|default({}) }}"
+teardown_jobspec: "{{ teardownJobspec|default({}) }}"
+_random_keys: "{{ randomKeys|default(random_keys) }}"
+_string_data: "{{ stringData|default(string_data) }}"

@@ -1,6 +1,19 @@
 ---
 # tasks file for RandomSecret
 
+- name: Create teardown job
+  k8s:
+    definition:
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: '{{ ansible_operator_meta.name }}-teardown'
+        namespace: '{{ ansible_operator_meta.namespace }}'
+        annotations: '{{ annotations }}'
+        labels: '{{ labels }}'
+      spec: '{{ teardown_jobspec }}'
+  when: state is defined and state == 'teardown' and teardown_jobspec is defined
+
 - name: Check current state of secret
   k8s_info:
     api_version: v1
@@ -38,12 +51,12 @@
                             item.name|default(item): current_datestamp
                        }) }}"
   when: >
-    ((item.update_strategy|default(default_update_strategy)|lower == 'rotate')
+    ((item.update_strategy|default(item.updateStrategy|default(default_update_strategy))|lower == 'rotate')
       and
      (item.name|default(item) not in current_last_rotated_at.keys()
       or
       (current_datestamp|to_datetime - current_last_rotated_at[item.name|default(item)]|to_datetime).total_seconds()
-       >= item.update_seconds|default(default_update_seconds)
+       >= item.update_seconds|default(item.updateSeconds|default(default_update_seconds))
      )
     )
     or
@@ -66,6 +79,7 @@
         annotations: '{{ annotations }}'
         labels: '{{ labels }}'
       data: '{{ _data }}'
+  when: state is undefined or state != 'teardown'
 
 - name: Record state of last key rotation
   k8s_status:
@@ -75,3 +89,17 @@
     namespace: '{{ ansible_operator_meta.namespace }}'
     status:
       lastRotatedAt: '{{ _last_rotated_at }}'
+  when: state is undefined or state != 'teardown'
+
+- name: Create setup job
+  k8s:
+    definition:
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: '{{ ansible_operator_meta.name }}-setup'
+        namespace: '{{ ansible_operator_meta.namespace }}'
+        annotations: '{{ annotations }}'
+        labels: '{{ labels }}'
+      spec: '{{ setup_jobspec }}'
+  when: (state is undefined or state != 'teardown') and setup_jobspec is defined
