@@ -37,6 +37,18 @@ rules:
       - patch
       - update
       - watch
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
   ##
   ## Rules for util.puzzle-itc.de/v1alpha1, Kind: RandomSecret
   ##
